@@ -1,0 +1,114 @@
+import React from "react";
+import Entry from "./Components/Entry";
+import Backgrounditems from "./Components/Backgrounditems";
+import Question from "./Components/Question";
+
+
+
+export default function App(){
+    const [quizActive,setQuizActive] = React.useState(false)
+    const [quizQuestions,setQuizQuestions] = React.useState(() => [])
+    const [answersArray,setAnswersArray] = React.useState()
+
+
+
+    function getQuestions(){
+        setQuizActive(prev => !prev)
+        fetch(`https://opentdb.com/api.php?amount=5`)
+            .then((response) => response.json())
+            .then((data) => {
+                //correct and incorrect answers are seperated so I create new array to put those together
+                //using random to generate index so correct answer wont always be on same index of array
+                const randomArrayId = Math.floor(Math.random() * data.results[0].incorrect_answers.length)
+                const allAnswers = [...data.results[0].incorrect_answers]
+                allAnswers.splice(randomArrayId,0,data.results[0].correct_answer)
+                const allAnswersObject = allAnswers.map(item => ({
+                    answer: item,
+                    selected: false
+                }))
+                setAnswersArray(allAnswersObject)
+                setQuizQuestions(data.results)
+                
+            
+            })
+    }
+
+
+    function selectAnswer(event){
+        setAnswersArray(prev =>{
+            return prev.map(item =>{
+                return item.answer == event.target.value
+                ? {...item, selected: true}
+                : {...item, selected: false}
+            })
+        })
+    }
+     
+        
+    // function startQuiz(){
+    //     setQuizActive(prev => !prev)
+    // }
+
+
+    return(
+        <div className="container">
+            <Backgrounditems quizActive={quizActive}/>
+            {quizActive ? <Question quizQuestions={quizQuestions} answersArray={answersArray} selectAnswer={selectAnswer} /> : <Entry getQuestions={getQuestions} />}
+        </div>
+    )
+
+}
+
+//Entry
+
+
+import React from "react";
+
+
+
+export default function Entry(props){
+    return(
+        <div className="entry-container">
+            <h1 className="entry-header">Quizzical</h1>
+            <h4 className="entry-description">
+                Some description if needed
+            </h4>
+            <div className="entry-start-game" onClick={props.getQuestions}>Start quiz</div>
+        </div>
+    )
+}
+
+
+//Question
+import React from "react";
+
+
+
+export default function Question(props){
+    if(props.quizQuestions.length !== 0){
+        const selectedStyle ={
+            backgroundColor: "#D6DBF5",
+            border: "none"
+        }
+        console.log(props.answersArray)
+        // console.log(props.quizQuestions[0].incorrect_answers)
+        // const randomArrayId = Math.floor(Math.random() * props.quizQuestions[0].incorrect_answers.length)
+        // console.log(randomArrayId)
+        // const allAnswers = [...props.quizQuestions[0].incorrect_answers]
+        // allAnswers.splice(randomArrayId,0,props.quizQuestions[0].correct_answer)
+        // console.log(allAnswers)
+        const answersElements = props.answersArray.map((item,id) => <button key={id} style={item.selected ? selectedStyle : {backgroundColor: "white"}} value={item.answer} onClick={props.selectAnswer} className="question-button">{item.answer}</button>)
+        return(
+            <div className="question-div">
+                <h2 className="question-header">{props.quizQuestions[0].question}</h2>
+                <div className="question-answers-div">
+                    {answersElements}
+                </div>
+                <hr className="question-seperator"></hr>
+            </div>
+        )
+    }
+  
+    
+
+}
